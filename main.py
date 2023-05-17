@@ -15,7 +15,8 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF
 
 
-
+#有修改rederPDF.py檔第241行在setDash前加了if value[1]<0: value[1] = 0
+#因為樂譜高8度向下的虛線|位置會是負的造成錯誤
 result = []
 options = Options()
 options.add_argument('--ignore-certificate-errors')
@@ -29,8 +30,12 @@ options.add_argument('--ignore-certificate-errors')
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) 
 
 #driver = Chrome()
-url = input("請輸入音樂網址")
-#url ='https://musescore.com/user/10919536/scores/2377386'
+#url = input("請輸入音樂網址")
+url ='https://musescore.com/classicman/scores/106022'
+#url ='https://musescore.com/classicman/scores/106022'
+
+#全視窗
+driver.maximize_window()
 
 #requests.get(url,headers=headers, cookies=cookie)
 
@@ -47,29 +52,40 @@ title = driver.find_element(By.CLASS_NAME, 'nFRPI.V4kyC.z85vg.N30cN').text
 sleep(3)
 
 alt = driver.find_element(By.CLASS_NAME, 'KfFlO').get_attribute('alt')
-page = int(alt[-7])
+
+alt = alt[-8:-6]
+#print(alt)
+#判斷頁數有可能是10位數
+if alt.isdigit():
+    page = int(alt)
+else:
+    page = int(alt[1])
 
 
-print(page)
+#print(page)
+
+
+#因為有兩個捲軸，target為我們要的捲軸
 target = driver.find_element(By.ID, "jmuse-scroller-component")
 
-js = f"arguments[0].scrollTop=arguments[0].scrollHeight/{page};"
+#scrollby是滾動方式向下移動
+js = f"arguments[0].scrollBy(0, arguments[0].scrollHeight/{page})"
 
 #用來計算的
 pagecopy = page
 sleep(2)
 
-for item in range(0,int(page/2)+1):
+
+for item in range(0,int(page)): #刷新網頁使得下面的樂譜可以跳出來
     if item < page:
         
-        driver.execute_script(js, target)
-        sleep(1)
+        driver.execute_script(js,target)
+        sleep(1.5)
         data = driver.find_elements(By.CLASS_NAME, 'KfFlO')
         for temp in data:
             if temp.get_attribute('src') not in result:
                 result.append(temp.get_attribute('src')) 
-        pagecopy/=2
-        js = f"arguments[0].scrollTop=arguments[0].scrollHeight/{pagecopy};"
+      
         sleep(1)
 
 
